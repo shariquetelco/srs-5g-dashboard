@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+*.log
+.git
+.gitignore
+*.md
+venv/
+env/
+.vscode/
+.idea/
+sample_gnb.log

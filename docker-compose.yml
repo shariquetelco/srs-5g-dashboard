@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    container_name: iabg-srsran-dashboard
+    ports:
+      - "5000:5000"
+    volumes:
+      - /tmp/gnb.log:/tmp/gnb.log:ro
+    restart: unless-stopped
+    environment:
+      - LOG_FILE=/tmp/gnb.log
+    networks:
+      - srsran-net
+
+networks:
+  srsran-net:
+    driver: bridge
