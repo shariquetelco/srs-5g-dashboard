@@ -19,30 +19,6 @@ function startMonitoring() {
     updateTimer = setInterval(updateDashboard, UPDATE_INTERVAL);
 }
 
-// Main update function
-async function updateDashboard() {
-    try {
-        // Fetch metrics
-        const metrics = await fetchMetrics();
-        updateMetricsDisplay(metrics);
-        
-        // Fetch events
-        const events = await fetchEvents();
-        updateEventsDisplay(events);
-        
-        // Fetch summary
-        const summary = await fetchSummary();
-        updateSummaryDisplay(summary);
-        
-        // Update connection status
-        updateConnectionStatus(true);
-        
-    } catch (error) {
-        console.error('Update error:', error);
-        updateConnectionStatus(false);
-    }
-}
-
 // Fetch metrics from API
 async function fetchMetrics() {
     const response = await fetch(`${API_BASE}/api/metrics`);
@@ -63,8 +39,41 @@ async function fetchSummary() {
     if (!response.ok) throw new Error('Failed to fetch summary');
     return await response.json();
 }
+// Fetch Open5GS status from API
+async function fetchOpen5GSStatus() {
+    const response = await fetch(`${API_BASE}/api/open5gs`);
+    if (!response.ok) throw new Error('Failed to fetch Open5GS status');
+    return await response.json();
+}
 
 // Update metrics display
+// Main update function
+async function updateDashboard() {
+    try {
+        // Fetch metrics
+        const metrics = await fetchMetrics();
+        updateMetricsDisplay(metrics);
+        
+        // Fetch events
+        const events = await fetchEvents();
+        updateEventsDisplay(events);
+        
+        // Fetch summary
+        const summary = await fetchSummary();
+        updateSummaryDisplay(summary);
+        
+        // Fetch Open5GS status
+        const open5gs = await fetchOpen5GSStatus();
+        updateOpen5GSDisplay(open5gs);
+        
+        // Update connection status
+        updateConnectionStatus(true);
+        
+    } catch (error) {
+        console.error('Update error:', error);
+        updateConnectionStatus(false);
+    }
+}
 function updateMetricsDisplay(metrics) {
     // System Status
     updateElement('gnb-status', formatStatus(metrics.status));
@@ -238,6 +247,32 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+// Update Open5GS core status display
+function updateOpen5GSDisplay(data) {
+    if (!data.status) return;
+    
+    const status = data.status;
+    
+    // Overall status
+    updateElement('core-overall', formatStatus(status.overall));
+    applyStatusColor('core-overall', status.overall);
+    
+    // Individual services
+    updateElement('core-amf', formatStatus(status.amf));
+    applyStatusColor('core-amf', status.amf);
+    
+    updateElement('core-smf', formatStatus(status.smf));
+    applyStatusColor('core-smf', status.smf);
+    
+    updateElement('core-upf', formatStatus(status.upf));
+    applyStatusColor('core-upf', status.upf);
+    
+    updateElement('core-nrf', formatStatus(status.nrf));
+    applyStatusColor('core-nrf', status.nrf);
+    
+    // Running count
+    updateElement('core-count', `${status.running_count}/${status.total_count}`);
 }
 
 // Cleanup on page unload

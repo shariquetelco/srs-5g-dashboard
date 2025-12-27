@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>srsRAN 5G Dashboard</title>
+    <title>IABG 5G srsRAN Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-    <div style="display: flex; align-items: center; gap: 20px;">
-        <img src="{{ url_for('static', filename='images/IABG_Logo.png') }}" alt="IABG Logo" style="height: 50px;">
-        <h1>IABG 5G srsRAN Dashboard</h1>
-    </div>
-    <div class="status-bar">
-        <span id="connection-status" class="status-badge">Connecting...</span>
-        <span id="last-update">Last update: --</span>
-    </div>
-</header>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <img src="{{ url_for('static', filename='images/IABG_Logo.png') }}" alt="IABG Logo" style="height: 50px;">
+                <h1>IABG 5G srsRAN Dashboard</h1>
+            </div>
+            <div class="status-bar">
+                <span id="connection-status" class="status-badge">Connecting...</span>
+                <span id="last-update">Last update: --</span>
+            </div>
+        </header>
 
         <!-- Main Grid -->
         <div class="grid">
-            <!-- Status Card -->
+            <!-- gNB System Status Card -->
             <div class="card">
-                <h2>📊 System Status</h2>
+                <h2>📊 gNB Status</h2>
                 <div class="metrics">
                     <div class="metric">
                         <span class="label">gNB Status:</span>
@@ -41,6 +41,37 @@
                     <div class="metric">
                         <span class="label">Connected UEs:</span>
                         <span id="ue-count" class="value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Open5GS Core Status Card -->
+            <div class="card">
+                <h2>🌐 Open5GS Core</h2>
+                <div class="metrics">
+                    <div class="metric">
+                        <span class="label">Overall Status:</span>
+                        <span id="core-overall" class="value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">AMF:</span>
+                        <span id="core-amf" class="value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">SMF:</span>
+                        <span id="core-smf" class="value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">UPF:</span>
+                        <span id="core-upf" class="value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">NRF:</span>
+                        <span id="core-nrf" class="value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Running:</span>
+                        <span id="core-count" class="value">0/8</span>
                     </div>
                 </div>
             </div>
@@ -112,9 +143,9 @@
 
         <!-- Footer -->
         <footer class="footer">
-    		<p>Built by Ahmad Sharique | <a href="mailto:ahmad@iabg.de">ahmad@iabg.de</a> | IABG mbH Munich | 
-    		<a href="https://github.com/shariquetelco/srs-5g-dashboard" target="_blank">GitHub</a></p>
-	</footer>
+            <p>Built by Ahmad Sharique | <a href="mailto:ahmad@iabg.de">ahmad@iabg.de</a> | IABG mbH Munich | 
+            <a href="https://github.com/shariquetelco/srs-5g-dashboard" target="_blank">GitHub</a></p>
+        </footer>
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>

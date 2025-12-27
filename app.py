@@ -11,6 +11,7 @@ import sys
 import time
 from threading import Thread, Lock
 from datetime import datetime
+from parsers.open5gs_checker import Open5GSChecker
 
 # Add parsers directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'parsers'))
@@ -25,6 +26,7 @@ UPDATE_INTERVAL = 2  # seconds
 
 # Global state
 parser = GnbLogParser()
+open5gs_checker = Open5GSChecker()
 metrics_lock = Lock()
 latest_events = []
 monitoring_active = False
@@ -112,6 +114,14 @@ def get_config():
         'log_file': LOG_FILE,
         'update_interval': UPDATE_INTERVAL,
         'parser_version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
+    })
+@app.route('/api/open5gs')
+def get_open5gs_status():
+    """API endpoint for Open5GS core status"""
+    status = open5gs_checker.get_all_status()
+    return jsonify({
+        'status': status,
         'timestamp': datetime.now().isoformat()
     })
 
