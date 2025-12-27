@@ -1,231 +1,645 @@
-# srsRAN 5G Dashboard
+# IABG 5G srsRAN Dashboard
 
-Real-time monitoring dashboard for srsRAN Project gNB (5G base station). Built for network engineers and researchers working with open-source 5G networks.
+<div align="center">
+  <img src="static/images/IABG_Logo.png" alt="IABG Logo" width="300"/>
+  
+  **Real-time monitoring dashboard for srsRAN Project gNB**
+  
+  [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
+  [![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
+  [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+  [![IABG](https://img.shields.io/badge/IABG-5G%20Division-red)](https://www.iabg.de/)
+</div>
 
-![Dashboard Status](https://img.shields.io/badge/status-active-success)
-![Python](https://img.shields.io/badge/python-3.8+-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+---
 
-## 🎯 Features
+## 📋 Table of Contents
 
-- **Real-time Monitoring**: Live updates every 2 seconds
-- **gNB Status Tracking**: Cell configuration, NGAP connection, ZMQ status
-- **Event Logging**: Track UE attachments, errors, and warnings
-- **Web-based Interface**: Clean, responsive dashboard accessible from any browser
-- **Log Parsing**: Intelligent parsing of srsRAN gNB logs
-- **Alert System**: Visual indicators for errors and warnings
+- [Overview](#overview)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Build Tools and Dependencies](#build-tools-and-dependencies)
+  - [Install srsRAN Project](#install-srsran-project)
+  - [Install Open5GS Core](#install-open5gs-core)
+  - [Install Dashboard](#install-dashboard)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+  - [Docker Deployment](#docker-deployment)
+  - [Manual Deployment](#manual-deployment)
+- [Usage](#usage)
+- [API Documentation](#api-documentation)
+- [Troubleshooting](#troubleshooting)
+- [Future Enhancements](#future-enhancements)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## 🎯 Overview
+
+The **IABG 5G srsRAN Dashboard** is a professional real-time monitoring solution for srsRAN Project gNB (5G base stations). Developed by the IABG 5G Division for defense and aerospace applications, it provides comprehensive visibility into:
+
+- gNB operational status and health
+- 5G core network connectivity (NGAP)
+- Cell configuration and RF parameters
+- UE connections and session management
+- Real-time error and warning tracking
+- ZMQ RF simulator status
+
+Built for **mission-critical 5G deployments** including BDBOS KOMET, ESA ARTES, and private 5G networks.
+
+---
+
+## ✨ Features
+
+### Real-time Monitoring
+- ⚡ **Live updates** every 2 seconds
+- 📊 **gNB status tracking** - Cell configuration, NGAP connection, ZMQ status
+- 📡 **Cell information** - PCI, bandwidth, band, frequency, antennas
+- 👥 **UE management** - Track connected users
+- 🔴 **Alert system** - Visual indicators for errors and warnings
+
+### Professional Interface
+- 🎨 **IABG branding** with company logo
+- 📱 **Responsive design** - Works on desktop, tablet, mobile
+- 🌐 **Web-based** - Access from any browser
+- 🔄 **Auto-refresh** - No manual intervention needed
+
+### Log Analysis
+- 📝 **Intelligent parsing** of srsRAN gNB logs
+- 🔍 **Event extraction** - Cell startup, NGAP events, UE attachments
+- 📈 **Metrics aggregation** - Historical error/warning tracking
+- 💾 **PCAP integration** - Links to packet captures
+
+### API & Integration
+- 🔌 **REST API** - JSON endpoints for external tools
+- 🐳 **Docker support** - Containerized deployment
+- 🔧 **Configurable** - Customize log paths, update intervals
+- 📊 **Export ready** - Structured data for analysis
+
+---
 
 ## 📸 Screenshots
 
-*Dashboard showing active gNB with connected UE*
+### Dashboard Overview
+![Dashboard Overview](docs/screenshots/dashboard_overview.png)
+*Main dashboard showing gNB status, cell configuration, and alerts*
 
-## 🚀 Quick Start
+### Cell Configuration
+![Cell Configuration](docs/screenshots/cell_config.png)
+*Detailed 5G NR cell parameters*
+
+### Alerts & Events
+![Alerts](docs/screenshots/alerts.png)
+*Real-time error and warning tracking*
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    IABG 5G srsRAN Dashboard                 │
+│                    (Flask Web Application)                   │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │   Parser    │  │  REST API    │  │  Web Interface   │  │
+│  │   Engine    │  │  Endpoints   │  │  (HTML/CSS/JS)   │  │
+│  └──────┬──────┘  └──────────────┘  └──────────────────┘  │
+│         │                                                    │
+└─────────┼────────────────────────────────────────────────────┘
+          │
+          ▼
+    /tmp/gnb.log ◄──────────────┐
+          │                      │
+          ▼                      │
+┌──────────────────────┐         │
+│   srsRAN Project     │         │
+│   gNB (5G SA)        │─────────┘
+│                      │
+│  ┌────────────────┐  │
+│  │  ZMQ RF Sim    │  │
+│  └────────────────┘  │
+│                      │
+│  NGAP (N2) ──────────┼─────────┐
+│  GTP-U (N3) ─────────┼─────┐   │
+└──────────────────────┘     │   │
+                             │   │
+                             ▼   ▼
+                    ┌─────────────────┐
+                    │   Open5GS       │
+                    │   5G Core       │
+                    │                 │
+                    │  AMF │ SMF │ UPF│
+                    └─────────────────┘
+```
+
+**Components:**
+- **Dashboard**: Flask-based web application with real-time log parsing
+- **srsRAN gNB**: 5G base station (NR SA mode)
+- **Open5GS**: 5G core network (AMF, SMF, UPF, etc.)
+- **ZMQ**: RF simulator for testing without hardware
+
+---
+
+## 🚀 Installation
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- srsRAN Project gNB installed and configured
-- Modern web browser
+**System Requirements:**
+- Ubuntu 24.04 LTS (or 22.04)
+- WSL2 (for Windows) or native Linux
+- 8GB RAM minimum
+- 20GB free disk space
 
-### Installation
+**Software:**
+- Python 3.8+
+- Docker (optional, for containerized deployment)
+- Git
 
-1. **Clone the repository**
+### Build Tools and Dependencies
+
 ```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install build essentials (Ubuntu 24.04)
+sudo apt install -y build-essential cmake libfftw3-dev libmbedtls-dev \
+  libboost-program-options-dev libconfig++-dev libsctp-dev libtool \
+  autoconf libzmq3-dev git libuhd-dev uhd-host libpcsclite-dev \
+  libgnutls28-dev libssl-dev libyaml-cpp-dev libpthread-stubs0-dev \
+  pkg-config curl gnupg
+```
+
+### MongoDB (for Open5GS)
+
+```bash
+# Add MongoDB repository (Ubuntu 22.04 compatible)
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+  sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] \
+  https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+  sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+# Install MongoDB
+sudo apt update
+sudo apt install -y mongodb-org
+
+# Start MongoDB
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# Verify
+mongod --version
+```
+
+### Install srsRAN Project
+
+```bash
+# Create working directory
+mkdir -p /mnt/c/TouchdownOld/srsran5g
+cd /mnt/c/TouchdownOld/srsran5g
+
+# Clone srsRAN Project
+git clone https://github.com/srsran/srsRAN_Project.git
+cd srsRAN_Project
+
+# Build with ZMQ support
+mkdir build && cd build
+cmake ../ -DENABLE_EXPORT=ON -DENABLE_ZEROMQ=ON
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+
+# Verify installation
+gnb --version
+```
+
+### Install Open5GS Core
+
+```bash
+# Add Open5GS repository
+sudo add-apt-repository ppa:open5gs/latest -y
+sudo apt update
+
+# Install Open5GS
+sudo apt install -y open5gs
+
+# Start core network functions
+sudo systemctl start open5gs-amfd open5gs-smfd open5gs-upfd \
+  open5gs-nrfd open5gs-ausfd open5gs-udmd open5gs-pcfd \
+  open5gs-bsfd open5gs-udrd
+
+# Verify AMF is running
+sudo systemctl status open5gs-amfd
+```
+
+### Install Dashboard
+
+```bash
+cd /mnt/c/TouchdownOld/srsran5g
+
+# Clone dashboard repository
 git clone https://github.com/shariquetelco/srs-5g-dashboard.git
 cd srs-5g-dashboard
+
+# Install Python dependencies
+pip install -r requirements.txt --break-system-packages
 ```
 
-2. **Install dependencies**
+---
+
+## ⚙️ Configuration
+
+### Configure Subscriber in Open5GS
+
+Add a test UE to the database:
+
 ```bash
-pip install -r requirements.txt
+sudo open5gs-dbctl add 001010123456780 \
+  00112233445566778899aabbccddeeff \
+  63bfa50ee6523365ff14c1f45f88737d
 ```
 
-3. **Start your gNB**
+**Subscriber Details:**
+- IMSI: `001010123456780`
+- Key: `00112233445566778899aabbccddeeff`
+- OPc: `63bfa50ee6523365ff14c1f45f88737d`
 
-Make sure your srsRAN gNB is running and logging to `/tmp/gnb.log`:
+### Create gNB Configuration
+
 ```bash
-sudo gnb -c your_config.yml
+mkdir -p configs
+cd configs
+nano gnb_zmq.yml
 ```
 
-4. **Start the dashboard**
+**gnb_zmq.yml:**
+```yaml
+# gNB configuration for ZMQ simulation
+cu_cp:
+  amf:
+    addr: 127.0.0.5
+    port: 38412
+    bind_addr: 127.0.0.1
+    supported_tracking_areas:
+      - tac: 7
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
+
+ru_sdr:
+  device_driver: zmq
+  device_args: tx_port=tcp://127.0.0.1:2000,rx_port=tcp://127.0.0.1:2001,base_srate=11.52e6
+  srate: 11.52
+  tx_gain: 75
+  rx_gain: 75
+
+cell_cfg:
+  dl_arfcn: 368500
+  band: 3
+  channel_bandwidth_MHz: 10
+  common_scs: 15
+  plmn: "00101"
+  tac: 7
+  pdcch:
+    common:
+      ss0_index: 0
+      coreset0_index: 6
+    dedicated:
+      ss2_type: ue_dedicated
+      dci_format_0_1_and_1_1: true
+  prach:
+    prach_config_index: 1
+
+log:
+  filename: /tmp/gnb.log
+  all_level: info
+
+pcap:
+  mac_enable: true
+  mac_filename: /tmp/gnb_mac.pcap
+  ngap_enable: true
+  ngap_filename: /tmp/gnb_ngap.pcap
+```
+
+---
+
+## 🐳 Deployment
+
+### Docker Deployment (Recommended)
+
+**Build and run:**
 ```bash
+cd srs-5g-dashboard
+
+# Build Docker image
+docker build -t iabg-srsran-dashboard .
+
+# Run with docker-compose
+docker-compose up -d
+
+# Check status
+docker ps
+
+# View logs
+docker logs iabg-srsran-dashboard
+
+# Stop
+docker-compose down
+```
+
+**Access dashboard:**
+```
+http://localhost:5000
+```
+
+### Manual Deployment
+
+**Terminal 1 - Dashboard:**
+```bash
+cd /mnt/c/TouchdownOld/srsran5g/srs-5g-dashboard
 python3 app.py
 ```
 
-5. **Open browser**
-
-Navigate to: http://localhost:5000
-
-## 📊 Dashboard Components
-
-### System Status
-- gNB operational status
-- NGAP connection to AMF
-- ZMQ RF simulator status
-- Number of connected UEs
-
-### Cell Configuration
-- Physical Cell ID (PCI)
-- Bandwidth and NR band
-- DL frequency and ARFCN
-- Antenna configuration
-
-### Alerts & Issues
-- Real-time error tracking
-- Warning notifications
-- Timestamp and details for each alert
-
-### Recent Events
-- UE attachment events
-- NGAP connection events
-- System state changes
-
-## 🔧 Configuration
-
-### Custom Log File Location
-
-Edit `app.py` to change the log file path:
-
-```python
-LOG_FILE = '/path/to/your/gnb.log'
-```
-
-### Update Interval
-
-Modify the update frequency (in seconds):
-
-```python
-UPDATE_INTERVAL = 2  # Update every 2 seconds
-```
-
-### Port Configuration
-
-Change the web server port:
-
-```python
-app.run(host='0.0.0.0', port=5000)
-```
-
-## 📁 Project Structure
-
-```
-srs-5g-dashboard/
-├── app.py                    # Flask backend server
-├── requirements.txt          # Python dependencies
-├── README.md                 # This file
-├── parsers/
-│   └── gnb_parser.py        # Log parsing engine
-├── static/
-│   ├── css/
-│   │   └── style.css        # Dashboard styling
-│   └── js/
-│       └── dashboard.js     # Frontend JavaScript
-└── templates/
-    └── dashboard.html       # HTML template
-```
-
-## 🔌 API Endpoints
-
-The dashboard exposes a REST API for external integrations:
-
-- `GET /api/metrics` - Current gNB metrics
-- `GET /api/events` - Recent events
-- `GET /api/summary` - Text summary
-- `GET /api/health` - Health check
-- `GET /api/config` - Dashboard configuration
-
-Example:
+**Terminal 2 - gNB:**
 ```bash
-curl http://localhost:5000/api/metrics
+cd /mnt/c/TouchdownOld/srsran5g/configs
+sudo gnb -c gnb_zmq.yml
 ```
 
-## 🧪 Testing
-
-### With Sample Log File
-
-Test the parser with sample data:
-
+**Terminal 3 - Add startup messages to log:**
 ```bash
-python3 parsers/gnb_parser.py
+echo "Cell pci=1, bw=10 MHz, 1T1R, dl_arfcn=368500 (n3), dl_freq=1842.5 MHz, dl_ssb_arfcn=368410, ul_freq=1747.5 MHz" | sudo tee -a /tmp/gnb.log
+echo "N2: Connection to AMF on 127.0.0.5:38412 completed" | sudo tee -a /tmp/gnb.log
 ```
 
-### With Live gNB
+---
 
-1. Start your gNB
-2. Start the dashboard
-3. Monitor real-time updates in your browser
+## 📖 Usage
 
-## 🛠️ Troubleshooting
+### Starting the System
+
+1. **Start Dashboard:**
+   ```bash
+   python3 app.py
+   ```
+   Dashboard available at: `http://localhost:5000`
+
+2. **Start gNB:**
+   ```bash
+   sudo gnb -c gnb_zmq.yml
+   ```
+
+3. **Populate Dashboard:**
+   The dashboard automatically parses `/tmp/gnb.log` every 2 seconds.
+
+### Dashboard Features
+
+- **System Status Card**: gNB status, NGAP connection, ZMQ status, connected UEs
+- **Cell Configuration Card**: PCI, bandwidth, band, frequency, ARFCN, antennas
+- **Alerts & Issues**: Real-time error and warning tracking
+- **Recent Events**: UE attachments, NGAP events, system state changes
+- **System Summary**: Text-based summary of current state
+
+### Monitoring
+
+The dashboard updates automatically. No manual refresh needed.
+
+**Status Indicators:**
+- 🟢 **Green**: Running/Connected/Active
+- 🟡 **Yellow**: Unknown/Waiting
+- 🔴 **Red**: Error/Disconnected/Failed
+
+---
+
+## 🔌 API Documentation
+
+### Base URL
+```
+http://localhost:5000/api
+```
+
+### Endpoints
+
+#### GET /api/metrics
+Returns current gNB metrics.
+
+**Response:**
+```json
+{
+  "status": "running",
+  "cell_info": {
+    "pci": "1",
+    "bandwidth_mhz": "10",
+    "band": "3",
+    "dl_freq_mhz": "1842.5",
+    "dl_arfcn": "368500",
+    "tx_antennas": "1",
+    "rx_antennas": "1"
+  },
+  "ngap_status": "connected",
+  "zmq_status": "active",
+  "ue_connections": 0,
+  "errors": [],
+  "warnings": [],
+  "last_update": "2025-12-27T18:30:00"
+}
+```
+
+#### GET /api/events
+Returns recent events.
+
+**Response:**
+```json
+{
+  "events": [
+    {
+      "timestamp": "2025-12-27T18:29:45",
+      "type": "cell_start",
+      "data": {"pci": "1", "bandwidth_mhz": "10"}
+    },
+    {
+      "timestamp": "2025-12-27T18:29:46",
+      "type": "ngap_connected",
+      "data": {"amf_ip": "127.0.0.5", "amf_port": "38412"}
+    }
+  ],
+  "count": 2,
+  "timestamp": "2025-12-27T18:30:00"
+}
+```
+
+#### GET /api/summary
+Returns text summary.
+
+**Response:**
+```json
+{
+  "summary": "Status: running | NGAP: connected | Connected UEs: 0 | Cell: PCI=1, BW=10MHz, Band n3 | Errors: 0 | Warnings: 0",
+  "timestamp": "2025-12-27T18:30:00"
+}
+```
+
+#### GET /api/health
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "monitoring": true,
+  "log_file": "/tmp/gnb.log",
+  "log_exists": true,
+  "timestamp": "2025-12-27T18:30:00"
+}
+```
+
+---
+
+## 🔧 Troubleshooting
 
 ### Dashboard shows "Waiting for gNB"
-- Ensure gNB is running
-- Check log file path is correct (`/tmp/gnb.log`)
-- Verify log file has read permissions
+**Cause:** gNB not running or log file doesn't exist.
+**Solution:**
+1. Check if gNB is running: `ps aux | grep gnb`
+2. Verify log file exists: `ls -la /tmp/gnb.log`
+3. Check log file permissions: `sudo chmod 644 /tmp/gnb.log`
 
-### No events appearing
-- Wait for gNB to generate log entries
-- Check UPDATE_INTERVAL setting
-- Verify browser console for errors
+### No cell information displayed
+**Cause:** Startup messages not in log file.
+**Solution:**
+```bash
+echo "Cell pci=1, bw=10 MHz, 1T1R, dl_arfcn=368500 (n3), dl_freq=1842.5 MHz" | sudo tee -a /tmp/gnb.log
+echo "N2: Connection to AMF on 127.0.0.5:38412 completed" | sudo tee -a /tmp/gnb.log
+```
 
-### Connection issues
-- Ensure port 5000 is not blocked by firewall
-- Try accessing via 127.0.0.1 instead of localhost
-- Check Flask server logs for errors
+### gNB fails to start - Port 2152 in use
+**Cause:** Another process using GTP-U port.
+**Solution:**
+```bash
+sudo lsof -i :2152
+sudo kill <PID>
+# Or restart Open5GS
+sudo systemctl restart open5gs-upfd
+```
+
+### Dashboard shows "Parser error"
+**Cause:** Code bug in log parser.
+**Solution:**
+1. Check parser code: `nano parsers/gnb_parser.py`
+2. Verify line 96 has: `lines = f.readlines()[-10000:]` (with colon)
+3. Restart dashboard
+
+### Docker container won't start
+**Cause:** Port 5000 already in use.
+**Solution:**
+```bash
+# Stop non-Docker dashboard
+pkill -f "python3 app.py"
+# Restart container
+docker-compose up -d
+```
+
+---
+
+## 🚧 Future Enhancements
+
+### Planned Features
+
+#### Phase 1 - Data Visualization
+- [ ] Historical data charts (last 24 hours)
+- [ ] Throughput graphs (DL/UL)
+- [ ] UE connection timeline
+- [ ] Resource block utilization
+
+#### Phase 2 - Data Export
+- [ ] Export metrics to CSV
+- [ ] Generate PDF reports
+- [ ] Prometheus metrics endpoint
+- [ ] Grafana dashboard template
+
+#### Phase 3 - Alerting
+- [ ] Email notifications
+- [ ] Slack integration
+- [ ] Webhook support
+- [ ] Custom alert rules
+
+#### Phase 4 - Advanced Features
+- [ ] Multiple gNB monitoring
+- [ ] Comparison view
+- [ ] Network slice tracking
+- [ ] WebSocket for instant updates
+
+#### Phase 5 - Enterprise Features
+- [ ] User authentication
+- [ ] Role-based access control
+- [ ] Audit logging
+- [ ] Backup/restore
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit changes: `git commit -m 'Add AmazingFeature'`
+4. Push to branch: `git push origin feature/AmazingFeature`
+5. Open Pull Request
 
-## 📝 Use Cases
+**Code Standards:**
+- Python: PEP 8
+- JavaScript: ES6+
+- HTML/CSS: Semantic markup
+- Comments: Clear and concise
 
-This dashboard is useful for:
-
-- **Development**: Real-time monitoring during gNB development
-- **Testing**: Track UE attachments and protocol events
-- **Debugging**: Quick identification of errors and warnings
-- **Demonstrations**: Visual presentation of 5G network status
-- **Research**: Data collection and analysis of gNB behavior
-
-## 🏢 About
-
-Developed for monitoring srsRAN Project deployments in:
-- Defense and aerospace projects
-- Research environments
-- Educational institutions
-- Private 5G networks
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📧 Contact
+
+**Ahmad Sharique**
+- Email: [ahmad@iabg.de](mailto:ahmad@iabg.de)
+- Personal: [eshariq.am@gmail.com](mailto:eshariq.am@gmail.com)
+- GitHub: [@shariquetelco](https://github.com/shariquetelco)
+- GitLab (IABG): [Ahmad](https://gitlab.iabg.de/Ahmad)
+
+**IABG mbH**
+- Division: 5G & Aerospace
+- Location: Munich, Germany
+- Website: [www.iabg.de](https://www.iabg.de)
+
+**Projects:**
+- BDBOS KOMET: €500M+ mission-critical 5G deployment
+- ESA ARTES: Satellite communications programs
+- Private 5G networks for defense applications
+
+---
 
 ## 🙏 Acknowledgments
 
 - [srsRAN Project](https://www.srsran.com/) - Open source 5G RAN
-- Built by [Sharique](https://github.com/shariquetelco)
-- Developed for IABG mbH defense technology projects
-
-## 📧 Contact
-
-For questions or support:
-- GitHub: [@shariquetelco](https://github.com/shariquetelco)
-- Email: eshariq.am@gmail.com
-
-## 🔮 Future Enhancements
-
-- [ ] Historical data charts
-- [ ] Multiple gNB monitoring
-- [ ] Export metrics to CSV
-- [ ] Alerting via email/Slack
-- [ ] Performance analytics
-- [ ] WebSocket for instant updates
-- [ ] Docker containerization
+- [Open5GS](https://open5gs.org/) - Open source 5G core network
+- IABG 5G Division Team
+- European Space Agency (ESA)
+- German Federal Office of Civil Protection and Disaster Assistance (BBK/BDBOS)
 
 ---
 
-**Built with ❤️ for the 5G open source community**
+<div align="center">
+  <strong>Built with ❤️ for the 5G open source community</strong>
+  <br>
+  <em>© 2025 IABG mbH - All Rights Reserved</em>
+</div>
