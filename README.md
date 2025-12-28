@@ -8,7 +8,7 @@
   [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
   [![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
   [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-  [![IABG](https://img.shields.io/badge/IABG-5G%20Division-red)](https://www.iabg.de/)
+  [![IABG](https://img.shields.io/badge/IABG-5G%20 CTSF20-red)](https://www.iabg.de/)
 </div>
 
 ---
