@@ -85,6 +85,15 @@ Built for **mission-critical 5G deployments** including BDBOS KOMET, ESA ARTES, 
 
 ## 📸 Screenshots
 
+### Complete Dashboard View
+![IABG 5G Dashboard](docs/screenshots/dashboard_full.png)
+*Complete dashboard showing gNB status (Radio-RAN), Open5GS Core services, and Cell Configuration (Spectrum Info)*
+
+**Dashboard Features:**
+- **Radio-RAN (gNB)**: Running status, NGAP connected to AMF, ZMQ active, 0 UEs
+- **CORE (Open5GS)**: All 8 services running (AMF, SMF, UPF, NRF, etc.) - 8/8 green
+- **Spectrum Info (Cell)**: PCI=1, 10MHz bandwidth, Band n3, 1842.5 MHz, ARFCN 368500, 1T1R antennas
+
 ### Dashboard Overview
 ![Dashboard Overview](docs/screenshots/dashboard_overview.png)
 *Main dashboard showing gNB status, cell configuration, and alerts*
