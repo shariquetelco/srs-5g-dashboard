@@ -4,12 +4,15 @@
 const API_BASE = '';
 const UPDATE_INTERVAL = 2000; // 2 seconds
 
+let ueChart = null;
+let alertsChart = null;
 let updateTimer = null;
 let isConnected = false;
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Dashboard initializing...');
+    initCharts();
     startMonitoring();
 });
 
@@ -46,6 +49,79 @@ async function fetchOpen5GSStatus() {
     return await response.json();
 }
 
+// Fetch chart data
+async function fetchChartData() {
+    const response = await fetch(`${API_BASE}/api/charts`);
+    if (!response.ok) throw new Error('Failed to fetch chart data');
+    return await response.json();
+}
+
+// Initialize charts
+function initCharts() {
+    const ueCtx = document.getElementById('ueChart').getContext('2d');
+    const alertsCtx = document.getElementById('alertsChart').getContext('2d');
+    
+    ueChart = new Chart(ueCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Connected UEs',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { title: { display: true, text: 'UE Connections Over Time' }}
+        }
+    });
+    
+    alertsChart = new Chart(alertsCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Errors',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Warnings',
+                    data: [],
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { title: { display: true, text: 'Alerts Over Time' }}
+        }
+    });
+}
+
+// Update charts
+function updateCharts(chartData) {
+    if (!ueChart || !alertsChart) return;
+    
+    const data = chartData.data;
+    
+    ueChart.data.labels = data.labels;
+    ueChart.data.datasets[0].data = data.ue_count;
+    ueChart.update();
+    
+    alertsChart.data.labels = data.labels;
+    alertsChart.data.datasets[0].data = data.errors;
+    alertsChart.data.datasets[1].data = data.warnings;
+    alertsChart.update();
+}
+
 // Update metrics display
 // Main update function
 async function updateDashboard() {
@@ -62,6 +138,10 @@ async function updateDashboard() {
         const summary = await fetchSummary();
         updateSummaryDisplay(summary);
         
+        // Fetch chart data
+        const charts = await fetchChartData();
+        updateCharts(charts);
+ 
         // Fetch Open5GS status
         const open5gs = await fetchOpen5GSStatus();
         updateOpen5GSDisplay(open5gs);

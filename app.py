@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 srsRAN 5G Dashboard - Flask Backend
-Real-time monitoring dashboard for srsRAN Project gNB
+Real-time monitoring dashboard for srsRAN Project gNB by Ahmad Sharique
 """
 
 from flask import Flask, render_template, jsonify
@@ -11,7 +11,9 @@ import sys
 import time
 from threading import Thread, Lock
 from datetime import datetime
+
 from parsers.open5gs_checker import Open5GSChecker
+from parsers.metrics_history import history
 
 # Add parsers directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'parsers'))
@@ -31,41 +33,49 @@ metrics_lock = Lock()
 latest_events = []
 monitoring_active = False
 
+
 def monitor_logs():
     """Background thread to continuously monitor gNB logs"""
     global latest_events, monitoring_active
-    
+
     monitoring_active = True
     last_size = 0
-    
+
     while monitoring_active:
         try:
             if os.path.exists(LOG_FILE):
-                # Check if file has grown
                 current_size = os.path.getsize(LOG_FILE)
-                
+
                 if current_size > last_size or current_size == 0:
-                    # Parse the log file
                     with metrics_lock:
                         events = parser.parse_file(LOG_FILE, tail_lines=100)
-                        latest_events = events[-50:]  # Keep last 50 events
-                    
+                        latest_events = events[-50:]
+
+                        # ---- ADDED: history update ----
+                        open5gs_status = open5gs_checker.get_all_status()
+                        history.add_datapoint(
+                            parser.get_metrics(),
+                            open5gs_status
+                        )
+                        # --------------------------------
+
                     last_size = current_size
             else:
-                # Log file doesn't exist yet
                 with metrics_lock:
                     parser.metrics['status'] = 'waiting_for_gnb'
-            
+
             time.sleep(UPDATE_INTERVAL)
-            
+
         except Exception as e:
             print(f"Monitor error: {e}")
             time.sleep(UPDATE_INTERVAL)
+
 
 @app.route('/')
 def index():
     """Main dashboard page"""
     return render_template('dashboard.html')
+
 
 @app.route('/api/metrics')
 def get_metrics():
@@ -74,6 +84,7 @@ def get_metrics():
         metrics = parser.get_metrics()
         metrics['timestamp'] = datetime.now().isoformat()
     return jsonify(metrics)
+
 
 @app.route('/api/events')
 def get_events():
@@ -86,6 +97,7 @@ def get_events():
         'timestamp': datetime.now().isoformat()
     })
 
+
 @app.route('/api/summary')
 def get_summary():
     """API endpoint for text summary"""
@@ -95,6 +107,7 @@ def get_summary():
         'summary': summary,
         'timestamp': datetime.now().isoformat()
     })
+
 
 @app.route('/api/health')
 def health_check():
@@ -107,6 +120,7 @@ def health_check():
         'timestamp': datetime.now().isoformat()
     })
 
+
 @app.route('/api/config')
 def get_config():
     """Get dashboard configuration"""
@@ -116,6 +130,8 @@ def get_config():
         'parser_version': '1.0.0',
         'timestamp': datetime.now().isoformat()
     })
+
+
 @app.route('/api/open5gs')
 def get_open5gs_status():
     """API endpoint for Open5GS core status"""
@@ -125,22 +141,32 @@ def get_open5gs_status():
         'timestamp': datetime.now().isoformat()
     })
 
+
+# ---- NEW API ENDPOINT ----
+@app.route('/api/charts')
+def get_chart_data():
+    """API endpoint for chart data"""
+    return jsonify({
+        'data': history.get_chart_data(),
+        'timestamp': datetime.now().isoformat()
+    })
+# --------------------------
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("srsRAN 5G Dashboard Starting...")
     print("=" * 60)
     print(f"Monitoring log file: {LOG_FILE}")
     print(f"Update interval: {UPDATE_INTERVAL} seconds")
-    print(f"Dashboard will be available at: http://localhost:5000")
+    print("Dashboard available at: http://localhost:5000")
     print("=" * 60)
-    
-    # Start background monitoring thread
+
     monitor_thread = Thread(target=monitor_logs, daemon=True)
     monitor_thread.start()
-    
-    # Start Flask app
+
     try:
         app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
     except KeyboardInterrupt:
-        print("\n\nShutting down dashboard...")
+        print("\nShutting down dashboard...")
         monitoring_active = False

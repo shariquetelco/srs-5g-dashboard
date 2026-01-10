@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="{{ url_for('static', filename='js/libs/chart.min.js') }}"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -123,7 +124,20 @@
                     </div>
                 </div>
             </div>
-
+            
+            <!-- Charts Card -->
+            <div class="card card-full">
+                <h2>📈 Real-Time Metrics</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <canvas id="ueChart"></canvas>
+                    </div>
+                    <div>
+                        <canvas id="alertsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+    
             <!-- Recent Events Card -->
             <div class="card card-wide">
                 <h2>📋 Recent Events</h2>
