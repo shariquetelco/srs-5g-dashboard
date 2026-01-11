@@ -138,7 +138,18 @@
                 </div>
             </div>
     
-            <!-- Recent Events Card -->
+           <!-- RF Scope Card -->
+            <div class="card card-full">
+                <h2>📡 RF Signal Scope (Live)</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div><canvas id="signalPowerChart"></canvas></div>
+                    <div><canvas id="frequencyChart"></canvas></div>
+                    <div><canvas id="channelResponseChart"></canvas></div>
+                    <div><canvas id="constellationChart"></canvas></div>
+                </div>
+            </div>
+    
+           <!-- Recent Events Card -->
             <div class="card card-wide">
                 <h2>📋 Recent Events</h2>
                 <div id="events-list" class="events-list">

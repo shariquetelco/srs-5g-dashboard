@@ -12,6 +12,7 @@ import time
 from threading import Thread, Lock
 from datetime import datetime
 
+from parsers.pcap_parser import pcap_parser
 from parsers.open5gs_checker import Open5GSChecker
 from parsers.metrics_history import history
 
@@ -151,7 +152,10 @@ def get_chart_data():
         'timestamp': datetime.now().isoformat()
     })
 # --------------------------
-
+@app.route('/api/rf-metrics')
+def get_rf_metrics():
+    rf_data = pcap_parser.parse_pcap()
+    return jsonify({'data': rf_data, 'timestamp': datetime.now().isoformat()})
 
 if __name__ == '__main__':
     print("=" * 60)

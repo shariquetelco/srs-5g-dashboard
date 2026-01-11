@@ -1,8 +1,18 @@
+// Name : Ahmad Sharique
+// email : ahmad@iabg.de
+// srsRAN 5G Dashboard - Frontend JavaScript
+// Real-time monitoring and updates
+
+// Name : Ahmad Sharique
+// email : ahmad@iabg.de
 // srsRAN 5G Dashboard - Frontend JavaScript
 // Real-time monitoring and updates
 
 const API_BASE = '';
 const UPDATE_INTERVAL = 2000; // 2 seconds
+
+let signalChart = null;
+let freqChart = null;
 
 let ueChart = null;
 let alertsChart = null;
@@ -22,45 +32,51 @@ function startMonitoring() {
     updateTimer = setInterval(updateDashboard, UPDATE_INTERVAL);
 }
 
-// Fetch metrics from API
+// -------------------- API FETCHERS --------------------
+
 async function fetchMetrics() {
     const response = await fetch(`${API_BASE}/api/metrics`);
     if (!response.ok) throw new Error('Failed to fetch metrics');
     return await response.json();
 }
 
-// Fetch events from API
 async function fetchEvents() {
     const response = await fetch(`${API_BASE}/api/events`);
     if (!response.ok) throw new Error('Failed to fetch events');
     return await response.json();
 }
 
-// Fetch summary from API
 async function fetchSummary() {
     const response = await fetch(`${API_BASE}/api/summary`);
     if (!response.ok) throw new Error('Failed to fetch summary');
     return await response.json();
 }
-// Fetch Open5GS status from API
+
 async function fetchOpen5GSStatus() {
     const response = await fetch(`${API_BASE}/api/open5gs`);
     if (!response.ok) throw new Error('Failed to fetch Open5GS status');
     return await response.json();
 }
 
-// Fetch chart data
 async function fetchChartData() {
     const response = await fetch(`${API_BASE}/api/charts`);
     if (!response.ok) throw new Error('Failed to fetch chart data');
     return await response.json();
 }
 
-// Initialize charts
+// RF metrics
+async function fetchRFMetrics() {
+    const response = await fetch(`${API_BASE}/api/rf-metrics`);
+    if (!response.ok) throw new Error('Failed to fetch RF');
+    return await response.json();
+}
+
+// -------------------- CHART INIT --------------------
+
 function initCharts() {
     const ueCtx = document.getElementById('ueChart').getContext('2d');
     const alertsCtx = document.getElementById('alertsChart').getContext('2d');
-    
+
     ueChart = new Chart(ueCtx, {
         type: 'line',
         data: {
@@ -74,292 +90,343 @@ function initCharts() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
             plugins: { title: { display: true, text: 'UE Connections Over Time' }}
         }
     });
-    
+
     alertsChart = new Chart(alertsCtx, {
         type: 'line',
         data: {
             labels: [],
             datasets: [
-                {
-                    label: 'Errors',
-                    data: [],
-                    borderColor: 'rgb(255, 99, 132)',
-                    tension: 0.1
-                },
-                {
-                    label: 'Warnings',
-                    data: [],
-                    borderColor: 'rgb(255, 205, 86)',
-                    tension: 0.1
-                }
+                { label: 'Errors', data: [], borderColor: 'rgb(255,99,132)', tension: 0.1 },
+                { label: 'Warnings', data: [], borderColor: 'rgb(255,205,86)', tension: 0.1 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
             plugins: { title: { display: true, text: 'Alerts Over Time' }}
+        }
+    });
+
+    // RF charts
+    const signalCtx = document.getElementById('signalPowerChart').getContext('2d');
+    const freqCtx = document.getElementById('frequencyChart').getContext('2d');
+    const channelCtx = document.getElementById('channelResponseChart').getContext('2d');
+    const constCtx = document.getElementById('constellationChart').getContext('2d');
+
+    signalChart = new Chart(signalCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 50 }, (_, i) => i),
+            datasets: [{
+                label: 'RSRP (dBm)',
+                data: [],
+                borderColor: 'rgb(54,162,235)',
+                backgroundColor: 'rgba(54,162,235,0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Signal Power (RSRP)' }},
+            scales: { y: { min: -100, max: -50 } }
+        }
+    });
+
+    freqChart = new Chart(freqCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 50 }, (_, i) => i),
+            datasets: [{
+                label: 'Frequency (MHz)',
+                data: [],
+                borderColor: 'rgb(153,102,255)',
+                backgroundColor: 'rgba(153,102,255,0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Channel Frequency' }},
+            scales: { y: { min: 1841, max: 1844 } }
+        }
+    });
+
+    // Channel response
+    signalChart.channelChart = new Chart(channelCtx, {
+        type: 'bar',
+        data: {
+            labels: Array.from({ length: 52 }, (_, i) => i),
+            datasets: [{
+                label: 'Channel Response',
+                data: [],
+                backgroundColor: 'rgba(75,192,192,0.6)',
+                borderColor: 'rgb(75,192,192)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Frequency Response (52 RBs)' }},
+            scales: { y: { min: 0, max: 1.5 } }
+        }
+    });
+
+    // Constellation
+    freqChart.constChart = new Chart(constCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'IQ Constellation',
+                data: [],
+                backgroundColor: 'rgba(255,99,132,0.5)',
+                borderColor: 'rgb(255,99,132)',
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'IQ Constellation (QPSK)' }},
+            scales: {
+                x: { min: -1.5, max: 1.5, title: { display: true, text: 'I' }},
+                y: { min: -1.5, max: 1.5, title: { display: true, text: 'Q' }}
+            }
         }
     });
 }
 
-// Update charts
+// -------------------- DASHBOARD UPDATE --------------------
+
 function updateCharts(chartData) {
     if (!ueChart || !alertsChart) return;
-    
-    const data = chartData.data;
-    
-    ueChart.data.labels = data.labels;
-    ueChart.data.datasets[0].data = data.ue_count;
+
+    const d = chartData.data;
+
+    ueChart.data.labels = d.labels;
+    ueChart.data.datasets[0].data = d.ue_count;
     ueChart.update();
-    
-    alertsChart.data.labels = data.labels;
-    alertsChart.data.datasets[0].data = data.errors;
-    alertsChart.data.datasets[1].data = data.warnings;
+
+    alertsChart.data.labels = d.labels;
+    alertsChart.data.datasets[0].data = d.errors;
+    alertsChart.data.datasets[1].data = d.warnings;
     alertsChart.update();
 }
 
-// Update metrics display
-// Main update function
 async function updateDashboard() {
     try {
-        // Fetch metrics
         const metrics = await fetchMetrics();
         updateMetricsDisplay(metrics);
-        
-        // Fetch events
+
         const events = await fetchEvents();
         updateEventsDisplay(events);
-        
-        // Fetch summary
+
         const summary = await fetchSummary();
         updateSummaryDisplay(summary);
-        
-        // Fetch chart data
+
         const charts = await fetchChartData();
         updateCharts(charts);
- 
-        // Fetch Open5GS status
+
+        // ---------- RF METRICS (FIXED) ----------
+        const rfData = await fetchRFMetrics();
+
+        if (signalChart && freqChart) {
+            signalChart.data.datasets[0].data = rfData.data.signal_power;
+            signalChart.update();
+
+            freqChart.data.datasets[0].data = rfData.data.frequency;
+            freqChart.update();
+
+            signalChart.channelChart.data.datasets[0].data =
+                rfData.data.channel_response;
+            signalChart.channelChart.update();
+
+            const iqData = rfData.data.iq_i.map((i, idx) => ({
+                x: i,
+                y: rfData.data.iq_q[idx]
+            }));
+
+            freqChart.constChart.data.datasets[0].data = iqData;
+            freqChart.constChart.update();
+        }
+        // --------------------------------------
+
         const open5gs = await fetchOpen5GSStatus();
         updateOpen5GSDisplay(open5gs);
-        
-        // Update connection status
+
         updateConnectionStatus(true);
-        
+
     } catch (error) {
         console.error('Update error:', error);
         updateConnectionStatus(false);
     }
 }
+
+// -------------------- UI HELPERS --------------------
+
 function updateMetricsDisplay(metrics) {
-    // System Status
     updateElement('gnb-status', formatStatus(metrics.status));
     updateElement('ngap-status', formatStatus(metrics.ngap_status));
     updateElement('zmq-status', formatStatus(metrics.zmq_status));
     updateElement('ue-count', metrics.ue_connections || 0);
-    
-    // Apply status colors
+
     applyStatusColor('gnb-status', metrics.status);
     applyStatusColor('ngap-status', metrics.ngap_status);
     applyStatusColor('zmq-status', metrics.zmq_status);
-    
-    // Cell Configuration
-    if (metrics.cell_info && Object.keys(metrics.cell_info).length > 0) {
-        const cell = metrics.cell_info;
-        updateElement('cell-pci', cell.pci || '--');
-        updateElement('cell-bw', cell.bandwidth_mhz ? `${cell.bandwidth_mhz} MHz` : '--');
-        updateElement('cell-band', cell.band ? `n${cell.band}` : '--');
-        updateElement('cell-freq', cell.dl_freq_mhz ? `${cell.dl_freq_mhz} MHz` : '--');
-        updateElement('cell-arfcn', cell.dl_arfcn || '--');
-        updateElement('cell-antennas', 
-            cell.tx_antennas && cell.rx_antennas ? 
-            `${cell.tx_antennas}T${cell.rx_antennas}R` : '--');
+
+    if (metrics.cell_info) {
+        const c = metrics.cell_info;
+        updateElement('cell-pci', c.pci || '--');
+        updateElement('cell-bw', c.bandwidth_mhz ? `${c.bandwidth_mhz} MHz` : '--');
+        updateElement('cell-band', c.band ? `n${c.band}` : '--');
+        updateElement('cell-freq', c.dl_freq_mhz ? `${c.dl_freq_mhz} MHz` : '--');
+        updateElement('cell-arfcn', c.dl_arfcn || '--');
+        updateElement('cell-antennas',
+            c.tx_antennas && c.rx_antennas ? `${c.tx_antennas}T${c.rx_antennas}R` : '--'
+        );
     }
-    
-    // Alerts
+
     updateAlerts(metrics.errors, 'error');
     updateAlerts(metrics.warnings, 'warning');
 }
 
-// Update events display
 function updateEventsDisplay(data) {
-    const eventsList = document.getElementById('events-list');
-    
-    if (!data.events || data.events.length === 0) {
-        eventsList.innerHTML = '<p class="no-events">No events yet</p>';
+    const el = document.getElementById('events-list');
+
+    if (!data.events || !data.events.length) {
+        el.innerHTML = '<p class="no-events">No events yet</p>';
         return;
     }
-    
-    // Show last 10 events
-    const recentEvents = data.events.slice(-10).reverse();
-    
-    eventsList.innerHTML = recentEvents.map(event => `
+
+    el.innerHTML = data.events.slice(-10).reverse().map(e => `
         <div class="event-item">
-            <div class="event-type">${formatEventType(event.type)}</div>
-            <div class="event-data">${formatEventData(event)}</div>
-            ${event.timestamp ? `<div class="event-timestamp">${formatTimestamp(event.timestamp)}</div>` : ''}
+            <div class="event-type">${formatEventType(e.type)}</div>
+            <div class="event-data">${formatEventData(e)}</div>
+            ${e.timestamp ? `<div class="event-timestamp">${formatTimestamp(e.timestamp)}</div>` : ''}
         </div>
     `).join('');
 }
 
-// Update summary display
-function updateSummaryDisplay(data) {
-    updateElement('summary-text', data.summary || 'No summary available');
+function updateSummaryDisplay(d) {
+    updateElement('summary-text', d.summary || 'No summary available');
 }
 
-// Update alerts (errors/warnings)
 function updateAlerts(alerts, type) {
-    const listId = `${type}-list`;
-    const countId = `${type}-count`;
-    const list = document.getElementById(listId);
-    const count = document.getElementById(countId);
-    
-    if (!alerts || alerts.length === 0) {
+    const list = document.getElementById(`${type}-list`);
+    const count = document.getElementById(`${type}-count`);
+
+    if (!alerts || !alerts.length) {
         list.innerHTML = `<p class="no-alerts">No ${type}s</p>`;
         count.textContent = '0';
         return;
     }
-    
+
     count.textContent = alerts.length;
-    
-    // Show last 5 alerts
-    const recentAlerts = alerts.slice(-5).reverse();
-    
-    list.innerHTML = recentAlerts.map(alert => `
+
+    list.innerHTML = alerts.slice(-5).reverse().map(a => `
         <div class="alert-item ${type}">
-            ${escapeHtml(alert.message)}
-            ${alert.timestamp ? `<span class="alert-timestamp">${formatTimestamp(alert.timestamp)}</span>` : ''}
+            ${escapeHtml(a.message)}
+            ${a.timestamp ? `<span class="alert-timestamp">${formatTimestamp(a.timestamp)}</span>` : ''}
         </div>
     `).join('');
 }
 
-// Update connection status indicator
+// -------------------- STATUS --------------------
+
 function updateConnectionStatus(connected) {
-    const statusEl = document.getElementById('connection-status');
-    const updateEl = document.getElementById('last-update');
-    
+    const s = document.getElementById('connection-status');
+    const u = document.getElementById('last-update');
+
     if (connected) {
-        statusEl.textContent = 'Connected';
-        statusEl.className = 'status-badge connected';
-        updateEl.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        s.textContent = 'Connected';
+        s.className = 'status-badge connected';
+        u.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
         isConnected = true;
     } else {
-        statusEl.textContent = 'Disconnected';
-        statusEl.className = 'status-badge disconnected';
+        s.textContent = 'Disconnected';
+        s.className = 'status-badge disconnected';
         isConnected = false;
     }
 }
 
-// Helper: Update element text content
-function updateElement(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value;
-    }
+// -------------------- UTILITIES --------------------
+
+function updateElement(id, val) {
+    const e = document.getElementById(id);
+    if (e) e.textContent = val;
 }
 
-// Helper: Apply status color
-function applyStatusColor(elementId, status) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    element.classList.remove('success', 'warning', 'danger');
-    
-    const statusLower = String(status).toLowerCase();
-    
-    if (['running', 'connected', 'active', 'ok'].includes(statusLower)) {
-        element.classList.add('success');
-    } else if (['waiting', 'pending', 'unknown'].includes(statusLower)) {
-        element.classList.add('warning');
-    } else if (['failed', 'disconnected', 'error', 'stopped'].includes(statusLower)) {
-        element.classList.add('danger');
-    }
+function applyStatusColor(id, status) {
+    const e = document.getElementById(id);
+    if (!e) return;
+
+    e.classList.remove('success', 'warning', 'danger');
+    const s = String(status).toLowerCase();
+
+    if (['running','connected','active','ok'].includes(s)) e.classList.add('success');
+    else if (['waiting','pending','unknown'].includes(s)) e.classList.add('warning');
+    else e.classList.add('danger');
 }
 
-// Helper: Format status text
-function formatStatus(status) {
-    if (!status) return 'Unknown';
-    return String(status)
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
+function formatStatus(s) {
+    if (!s) return 'Unknown';
+    return String(s).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
-// Helper: Format event type
-function formatEventType(type) {
-    if (!type) return 'Event';
-    return String(type)
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
+function formatEventType(t) {
+    if (!t) return 'Event';
+    return String(t).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
-// Helper: Format event data
-function formatEventData(event) {
-    if (!event.data) return '';
-    
-    if (typeof event.data === 'string') {
-        return escapeHtml(event.data);
-    }
-    
-    if (typeof event.data === 'object') {
-        return Object.entries(event.data)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(', ');
-    }
-    
-    return String(event.data);
+function formatEventData(e) {
+    if (!e.data) return '';
+    if (typeof e.data === 'string') return escapeHtml(e.data);
+    if (typeof e.data === 'object')
+        return Object.entries(e.data).map(([k,v]) => `${k}: ${v}`).join(', ');
+    return String(e.data);
 }
 
-// Helper: Format timestamp
-function formatTimestamp(timestamp) {
-    try {
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    } catch (e) {
-        return timestamp;
-    }
+function formatTimestamp(ts) {
+    try { return new Date(ts).toLocaleString(); }
+    catch { return ts; }
 }
 
-// Helper: Escape HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-// Update Open5GS core status display
-function updateOpen5GSDisplay(data) {
-    if (!data.status) return;
-    
-    const status = data.status;
-    
-    // Overall status
-    updateElement('core-overall', formatStatus(status.overall));
-    applyStatusColor('core-overall', status.overall);
-    
-    // Individual services
-    updateElement('core-amf', formatStatus(status.amf));
-    applyStatusColor('core-amf', status.amf);
-    
-    updateElement('core-smf', formatStatus(status.smf));
-    applyStatusColor('core-smf', status.smf);
-    
-    updateElement('core-upf', formatStatus(status.upf));
-    applyStatusColor('core-upf', status.upf);
-    
-    updateElement('core-nrf', formatStatus(status.nrf));
-    applyStatusColor('core-nrf', status.nrf);
-    
-    // Running count
-    updateElement('core-count', `${status.running_count}/${status.total_count}`);
+function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
 }
 
-// Cleanup on page unload
+// -------------------- OPEN5GS --------------------
+
+function updateOpen5GSDisplay(d) {
+    if (!d.status) return;
+    const s = d.status;
+
+    updateElement('core-overall', formatStatus(s.overall));
+    applyStatusColor('core-overall', s.overall);
+
+    updateElement('core-amf', formatStatus(s.amf));
+    applyStatusColor('core-amf', s.amf);
+
+    updateElement('core-smf', formatStatus(s.smf));
+    applyStatusColor('core-smf', s.smf);
+
+    updateElement('core-upf', formatStatus(s.upf));
+    applyStatusColor('core-upf', s.upf);
+
+    updateElement('core-nrf', formatStatus(s.nrf));
+    applyStatusColor('core-nrf', s.nrf);
+
+    updateElement('core-count', `${s.running_count}/${s.total_count}`);
+}
+
+// -------------------- CLEANUP --------------------
+
 window.addEventListener('beforeunload', () => {
-    if (updateTimer) {
-        clearInterval(updateTimer);
-    }
+    if (updateTimer) clearInterval(updateTimer);
 });
 
 console.log('Dashboard JavaScript loaded');
