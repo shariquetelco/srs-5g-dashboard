@@ -13,20 +13,25 @@ const UPDATE_INTERVAL = 2000; // 2 seconds
 
 let signalChart = null;
 let freqChart = null;
-
 let ueChart = null;
 let alertsChart = null;
 let updateTimer = null;
 let isConnected = false;
 
-// Initialize dashboard
+// -------------------- INIT --------------------
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Dashboard initializing...');
+
+    // Mermaid init (UPDATED)
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+
     initCharts();
     startMonitoring();
 });
 
-// Start real-time monitoring
+// -------------------- MONITOR --------------------
+
 function startMonitoring() {
     updateDashboard();
     updateTimer = setInterval(updateDashboard, UPDATE_INTERVAL);
@@ -71,6 +76,32 @@ async function fetchRFMetrics() {
     return await response.json();
 }
 
+// -------------------- CALL FLOW --------------------
+
+async function fetchCallFlow() {
+    const response = await fetch(`${API_BASE}/api/call-flow`);
+    if (!response.ok) throw new Error('Failed to fetch call flow');
+    return await response.json();
+}
+
+// UPDATED FUNCTION
+function updateCallFlow(data) {
+    if (!data.messages || data.messages.length === 0) return;
+    
+    let diagram = 'sequenceDiagram\n    participant gNB\n    participant AMF\n    participant UPF\n';
+    
+    data.messages.slice(-10).forEach(msg => {
+        diagram += `    ${msg.from}->>${msg.to}: ${msg.message}\n`;
+    });
+    
+    const container = document.getElementById('call-flow-diagram');
+    if (!container) return;
+
+    container.innerHTML = diagram;
+    container.removeAttribute('data-processed');
+    mermaid.init(undefined, container);
+}
+
 // -------------------- CHART INIT --------------------
 
 function initCharts() {
@@ -79,19 +110,8 @@ function initCharts() {
 
     ueChart = new Chart(ueCtx, {
         type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Connected UEs',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { title: { display: true, text: 'UE Connections Over Time' }}
-        }
+        data: { labels: [], datasets: [{ label: 'Connected UEs', data: [], borderColor: 'rgb(75,192,192)', tension: 0.1 }] },
+        options: { responsive: true, plugins: { title: { display: true, text: 'UE Connections Over Time' } } }
     });
 
     alertsChart = new Chart(alertsCtx, {
@@ -103,13 +123,9 @@ function initCharts() {
                 { label: 'Warnings', data: [], borderColor: 'rgb(255,205,86)', tension: 0.1 }
             ]
         },
-        options: {
-            responsive: true,
-            plugins: { title: { display: true, text: 'Alerts Over Time' }}
-        }
+        options: { responsive: true, plugins: { title: { display: true, text: 'Alerts Over Time' } } }
     });
 
-    // RF charts
     const signalCtx = document.getElementById('signalPowerChart').getContext('2d');
     const freqCtx = document.getElementById('frequencyChart').getContext('2d');
     const channelCtx = document.getElementById('channelResponseChart').getContext('2d');
@@ -155,7 +171,6 @@ function initCharts() {
         }
     });
 
-    // Channel response
     signalChart.channelChart = new Chart(channelCtx, {
         type: 'bar',
         data: {
@@ -175,7 +190,6 @@ function initCharts() {
         }
     });
 
-    // Constellation
     freqChart.constChart = new Chart(constCtx, {
         type: 'scatter',
         data: {
@@ -198,11 +212,10 @@ function initCharts() {
     });
 }
 
-// -------------------- DASHBOARD UPDATE --------------------
+// -------------------- UPDATE --------------------
 
 function updateCharts(chartData) {
     if (!ueChart || !alertsChart) return;
-
     const d = chartData.data;
 
     ueChart.data.labels = d.labels;
@@ -229,7 +242,7 @@ async function updateDashboard() {
         const charts = await fetchChartData();
         updateCharts(charts);
 
-        // ---------- RF METRICS (FIXED) ----------
+        // -------- RF METRICS --------
         const rfData = await fetchRFMetrics();
 
         if (signalChart && freqChart) {
@@ -251,7 +264,10 @@ async function updateDashboard() {
             freqChart.constChart.data.datasets[0].data = iqData;
             freqChart.constChart.update();
         }
-        // --------------------------------------
+
+        // -------- CALL FLOW --------
+        const callFlow = await fetchCallFlow();
+        updateCallFlow(callFlow);
 
         const open5gs = await fetchOpen5GSStatus();
         updateOpen5GSDisplay(open5gs);

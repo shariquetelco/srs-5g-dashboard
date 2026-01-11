@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <script src="{{ url_for('static', filename='js/libs/chart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/libs/mermaid.min.js') }}"></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -149,6 +150,20 @@
                 </div>
             </div>
     
+            <!-- Call Flow Card -->
+            <div class="card card-full">
+                <h2>📞 Call Flow Diagram (Live)</h2>
+                <div id="call-flow-container" style="background: white; padding: 20px; border-radius: 8px;">
+                    <div class="mermaid" id="call-flow-diagram">
+                        sequenceDiagram
+                            participant gNB
+                            participant AMF
+                            participant UPF
+                            Note over gNB,UPF: Waiting for messages...
+                    </div>
+                </div>
+            </div>
+
            <!-- Recent Events Card -->
             <div class="card card-wide">
                 <h2>📋 Recent Events</h2>

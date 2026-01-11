@@ -15,6 +15,7 @@ from datetime import datetime
 from parsers.pcap_parser import pcap_parser
 from parsers.open5gs_checker import Open5GSChecker
 from parsers.metrics_history import history
+from parsers.call_flow_parser import call_flow_parser
 
 # Add parsers directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'parsers'))
@@ -156,6 +157,11 @@ def get_chart_data():
 def get_rf_metrics():
     rf_data = pcap_parser.parse_pcap()
     return jsonify({'data': rf_data, 'timestamp': datetime.now().isoformat()})
+
+@app.route('/api/call-flow')
+def get_call_flow():
+    messages = call_flow_parser.parse_logs()
+    return jsonify({'messages': messages, 'timestamp': datetime.now().isoformat()})
 
 if __name__ == '__main__':
     print("=" * 60)
